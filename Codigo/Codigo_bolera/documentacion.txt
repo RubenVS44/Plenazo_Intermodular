@@ -1,0 +1,82 @@
+# DOCUMENTACIÓN DEL PROYECTO: BOLERA PLENAZO
+
+Este documento recopila la estructura, la arquitectura y el comportamiento detallado de los componentes de código implementados en la aplicación. El sistema utiliza el framework de persistencia **JPA / Hibernate** para interactuar con una base de datos MySQL relacional hospedada en la nube (**AWS**).
+
+---
+
+## 1. PAQUETE PRINCIPAL (Inicio)
+
+### `Main.java`
+* **Propósito:** Actúa como el punto de entrada principal del programa (`public static void main`).
+* **Funcionamiento:** * Levanta un bucle interactivo por consola que permite al usuario escoger entre registrarse, iniciar sesión o salir.
+  * Captura las entradas mediante un objeto `Scanner`.
+  * Se comunica directamente con un objeto `Controlador` encargado de la lógica persistente.
+  * Cierra los recursos ordenadamente (`scanner` y conexiones de JPA) al finalizar la ejecución del software.
+
+---
+
+## 2. PAQUETE DE EXCEPCIONES (excepciones)
+
+Clases diseñadas para capturar fallos específicos en las reglas de negocio e impedir estados inconsistentes en la base de datos:
+
+* **`JugadorDuplicadoException.java`:** Se dispara si se intenta registrar un jugador con identificadores o nombres que ya constan en el almacenamiento del sistema.
+* **`PistaOcupadaException.java`:** Controla la disponibilidad de las instalaciones. Salta si se intenta asignar un evento o juego sobre una pista que se encuentra actualmente en uso.
+* **`RegistroJugadorException.java`:** Funciona como una excepción genérica orientada a capturar problemas o incidencias inesperadas durante la fase de alta de nuevos jugadores.
+
+---
+
+## 3. PAQUETE DE ENTIDADES Y MODELADO ORM (entidades)
+
+Clases que representan las tablas físicas de la base de datos relacional mapeadas mediante anotaciones de **Jakarta Persistence (JPA)**. Todas ellas cuentan con un constructor vacío indispensable para el funcionamiento interno del motor ORM.
+
+### `Usuario.java`
+* **Tabla vinculada:** `usuarios` (AWS)
+* **Atributos clave:** `id` (Clave primaria), `username` (único y obligatorio), `password` (con longitud adaptada para soportar cadenas encriptadas con algoritmos tipo BCrypt).
+* **Propósito:** Gestionar el control de accesos e inicio de sesión de la aplicación.
+
+### `Pareja.java`
+* **Tabla vinculada:** `parejas`
+* **Atributos clave:** `id` (Autoincremental), `nombrePareja`.
+* **Propósito:** Representa a los conjuntos competitivos registrados que participan en los torneos organizados por la bolera.
+
+### `Partido.java`
+* **Tabla vinculada:** `partidos`
+* **Atributos clave:** `id`, `fecha` (usando `LocalDate`), `resultado`, `jornada`.
+* **Particularidad:** Declara atributos `parejaLocal` y `parejaVisitante` con la anotación `@Transient`. Esto le indica a JPA que ignore temporalmente estas relaciones en la base de datos, manteniéndolas únicamente en memoria de la aplicación para interactuar fácilmente con módulos de gestión externos (como `GestionTorneo`).
+
+### `Pista.java`
+* **Tabla vinculada:** `pistas`
+* **Atributos clave:** `numero_pista` (Clave primaria), `estado`.
+* **Propósito:** Mapear el estado físico de los carriles de la bolera (ej. Libre, Ocupada, Mantenimiento).
+
+### `ReservaPista.java`
+* **Tabla vinculada:** `reservas_pistas` (Sincronizada con phpMyAdmin)
+* **Atributos clave:** `id`, `fecha_hora` (Utiliza `LocalDateTime` para coincidir de forma nativa con los tipos `DATETIME`/`TIMESTAMP` de MySQL).
+* **Propósito:** Llevar el registro cronológico y la organización de los turnos de juego reservados.
+
+### `ResultadoClasificacion.java`
+* **Tabla vinculada:** `resultados_clasificacion`
+* **Atributos clave:** `id`, `puntos`, `posicion`.
+* **Propósito:** Almacena las estadísticas de rendimiento y rangos de las tablas clasificatorias del torneo. Incluye un método `toString()` formateado para facilitar su visualización directa en auditorías por consola.
+
+---
+
+## 4. PAQUETE DE CONTROLADORES Y LÓGICA (codigo)
+
+Módulos principales encargados de orquestar el flujo de datos, aplicar la seguridad y procesar las reglas del negocio.
+
+### `Controlador.java`
+* **Tecnología:** JPA puro (Jakarta Persistence) apoyado por Hibernate y BCrypt.
+* **Propósito:** Conexión directa y persistencia con la infraestructura Cloud (AWS).
+* **Mecanismos clave:**
+  * **`registrarUsuario`:** Abre un contexto transaccional, genera un hash irreversible de la contraseña utilizando la librería `BCrypt` para evitar riesgos de seguridad y persiste la entidad `Usuario` de forma segura. Aplica *Rollback* automático si ocurre un error inesperado.
+  * **`iniciarSesion`:** Utiliza consultas **JPQL** tipadas mediante parámetros seguros (prevención de inyección SQL) para recuperar al usuario por su alias y verificar el hash cifrado mediante `BCrypt.checkpw`.
+  * **Diagnóstico automático:** En su constructor incluye un escáner que imprime en los logs de la consola qué entidades han sido cargadas correctamente por el metamodelo de JPA.
+
+### `gestionTorneo.java`
+* **Tecnología:** Estructuras de datos dinámicas en memoria (`ArrayList`).
+* **Propósito:** Actúa como el núcleo de lógica de negocio para las competiciones de la bolera.
+* **Mecanismos clave:**
+  * **Persistencia Volátil:** Aloja listas dinámicas independientes para `Jugador`, `Pareja`, `Partido` y `ReservaPista`.
+  * **Control de Inscripciones:** El método `registrarJugador` evalúa iterativamente que no existan colisiones de claves primarias virtuales (IDs de jugadores duplicados), lanzando una `RegistroJugadorException` estructurada si se quiebra la regla del negocio.
+  * **Gestión de Calendarios:** Calendariza emparejamientos apoyándose en las entidades marcadas como transitorias en JPA, imprimiendo logs interactivos de los encuentros programados por jornada.
