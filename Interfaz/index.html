@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎳 Bolera Plenazo - Panel de Control Premium</title>
+    <title>Bolera Plenazo</title>
     <style>
         /* --- VARIABLES DE COLOR (MODO CLARO LUMINOSO) --- */
         :root {
@@ -213,6 +213,20 @@
             background-color: #047857;
         }
 
+        /* Enlaces para alternar entre login y registro */
+        .toggle-auth {
+            display: block;
+            margin-top: 1rem;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--color-secundario);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .toggle-auth:hover {
+            text-decoration: underline;
+        }
+
         /* --- TABLAS DE CLASIFICACIÓN --- */
         .table-responsive {
             overflow-x: auto;
@@ -408,18 +422,41 @@
             <div class="auth-grid" style="margin-top: 1.2rem;">
                 
                 <div class="auth-box">
-                    <h3>👤 Iniciar Sesión</h3>
-                    <form onsubmit="iniciarSesion(event)">
-                        <div class="form-group">
-                            <label>Usuario / Correo Electrónico</label>
-                            <input type="text" placeholder="ejemplo@plenazo.com" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Contraseña</label>
-                            <input type="password" placeholder="••••••••" required>
-                        </div>
-                        <button type="submit">🚀 Entrar al Panel</button>
-                    </form>
+                    <div id="login-form-wrapper">
+                        <h3>👤 Iniciar Sesión</h3>
+                        <form onsubmit="iniciarSesion(event)">
+                            <div class="form-group">
+                                <label>Usuario / Correo Electrónico</label>
+                                <input type="text" placeholder="ejemplo@plenazo.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Contraseña</label>
+                                <input type="password" placeholder="••••••••" required>
+                            </div>
+                            <button type="submit">🚀 Entrar al Panel</button>
+                        </form>
+                        <a href="#" class="toggle-auth" onclick="toggleAuthForms(event)">¿No tienes cuenta? Regístrate aquí</a>
+                    </div>
+
+                    <div id="register-form-wrapper" class="hidden">
+                        <h3>📝 Crear Cuenta</h3>
+                        <form onsubmit="registrarUsuario(event)">
+                            <div class="form-group">
+                                <label>Nombre Completo</label>
+                                <input type="text" placeholder="Tu nombre" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Correo Electrónico</label>
+                                <input type="email" placeholder="correo@plenazo.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Contraseña nueva</label>
+                                <input type="password" placeholder="Mínimo 6 caracteres" required>
+                            </div>
+                            <button type="submit" class="btn-success">💾 Crear Cuenta</button>
+                        </form>
+                        <a href="#" class="toggle-auth" onclick="toggleAuthForms(event)">¿Ya tienes cuenta? Inicia sesión</a>
+                    </div>
                 </div>
 
                 <div class="auth-box">
@@ -446,7 +483,6 @@
 
         <div id="main-content-report" class="card full-width hidden">
             <h2>📊 Informe Ejecutivo del Torneo (Jornada 6)</h2>
-            
             <div class="stats-grid">
                 <div class="stat-box">
                     <div id="stat-partidos" class="number">18</div>
@@ -465,7 +501,6 @@
                     <div class="label">Máximo Anotador</div>
                 </div>
             </div>
-
             <div class="report-text">
                 <strong>📝 Resumen Analítico:</strong> La Jornada 6 concluye con un dominio absoluto de <em>Strike Masters</em>, consolidando su liderato invicto tras derrotar a su rival directo <em>Los Plenos</em> por un contundente 3-1. Se observa una alta competitividad en la zona media con el empate técnico entre <em>Efecto Curvo</em> y <em>Pins Killers</em>. Como contraparte, la administración destaca la racha negativa de <em>Los Turbos</em>, quienes aún no logran inaugurar su casillero de puntos.
             </div>
@@ -558,17 +593,14 @@
         <div id="main-content-3" class="card full-width hidden">
             <h2>🚨 Monitorización de Pistas Automatizadas</h2>
             <div class="alert-container" style="margin-top: 1rem;">
-                
                 <div class="alert-box alert-warning">
                     <strong>⚠️ RESERVA AUTOMÁTICA ACTIVA</strong>
                     <p>Pista 3 bloqueada temporalmente por encuentro de liga oficial en curso.</p>
                 </div>
-
                 <div class="alert-box alert-danger">
                     <strong>🔧 INCIDENCIA EN HARDWARE</strong>
                     <p>Pista 5 fuera de servicio de forma preventiva por un atasco en el retorno mecánico.</p>
                 </div>
-
                 <div class="checker-zone">
                     <label style="font-weight: 600; font-size: 0.9rem; display: block; margin-bottom: 0.5rem; color: var(--color-principal);">
                         🔍 Comprobar sensor físico de pista en tiempo real:
@@ -582,40 +614,48 @@
                     </select>
                     <button type="button" onclick="comprobarPista()">📡 Consultar Estado del Sensor</button>
                 </div>
-
             </div>
         </div>
 
     </div>
 
     <script>
-        // Contador global dinámico para el informe ejecutivo
         let partidosContador = 18;
+
+        // Función para cambiar de formulario (Login <-> Registro)
+        function toggleAuthForms(event) {
+            event.preventDefault();
+            document.getElementById('login-form-wrapper').classList.toggle('hidden');
+            document.getElementById('register-form-wrapper').classList.toggle('hidden');
+        }
+
+        // Simulación de Registro Exitoso
+        function registrarUsuario(event) {
+            event.preventDefault();
+            alert('💾 ¡Cuenta creada con éxito! Sincronizando credenciales en AWS DynamoDB... Ahora puedes iniciar sesión.');
+            // Volvemos automáticamente al login para que el usuario entre
+            toggleAuthForms(event);
+        }
 
         function iniciarSesion(event) {
             event.preventDefault(); 
-            
             alert('🔐 Login correcto. Descargando informes y sincronizando Base de Datos AWS RDS...');
             
-            // 1. Ocultar la sección del Login y mostrar botón cerrar sesión
             document.getElementById('auth-section').classList.add('hidden');
             document.getElementById('logout-btn').classList.remove('hidden');
             
-            // 2. Localizar secciones
             const report = document.getElementById('main-content-report');
             const booking = document.getElementById('main-content-booking');
             const content1 = document.getElementById('main-content-1');
             const content2 = document.getElementById('main-content-2');
             const content3 = document.getElementById('main-content-3');
 
-            // 3. Quitar la propiedad .hidden
             report.classList.remove('hidden');
             booking.classList.remove('hidden');
             content1.classList.remove('hidden');
             content2.classList.remove('hidden');
             content3.classList.remove('hidden');
 
-            // 4. Limpiar displays inline
             report.style.display = '';
             booking.style.display = '';
             content1.style.display = '';
@@ -626,11 +666,9 @@
         function cerrarSesion() {
             alert('🔒 Cerrando sesión de forma segura y limpiando tokens locales...');
             
-            // 1. Mostrar de nuevo la sección login y ocultar botón logout
             document.getElementById('auth-section').classList.remove('hidden');
             document.getElementById('logout-btn').classList.add('hidden');
             
-            // 2. Añadir clase hidden a los paneles de datos
             document.getElementById('main-content-report').classList.add('hidden');
             document.getElementById('main-content-booking').classList.add('hidden');
             document.getElementById('main-content-1').classList.add('hidden');
@@ -640,7 +678,6 @@
 
         function hacerReserva(event) {
             event.preventDefault();
-            
             const pista = document.getElementById('pistaReserva').value;
             const equipo = document.getElementById('equipoReserva').value;
             const fecha = document.getElementById('fechaReserva').value;
@@ -648,12 +685,11 @@
 
             alert(`✅ ¡ÉXITO! Insertando registro en tabla 'reservas':\n${pista} - ${equipo} el ${fecha} a las ${hora}`);
 
-            // Añadir visualmente el partido al cuadro de marcadores recientes
             const contenedor = document.getElementById('contenedor-partidos-dinamicos');
             const nuevaFila = document.createElement('div');
             nuevaFila.className = 'match-row';
             nuevaFila.style.marginTop = '0.4rem';
-            nuevaFila.style.borderLeft = '4px solid #10b981'; // Destacar en verde que es una reserva nueva
+            nuevaFila.style.borderLeft = '4px solid #10b981'; 
             nuevaFila.innerHTML = `
                 <span class="team-name">📝 ${equipo}</span>
                 <span class="match-score">vs</span>
@@ -661,11 +697,9 @@
             `;
             contenedor.appendChild(nuevaFila);
 
-            // Actualizar contador del informe ejecutivo en directo
             partidosContador++;
             document.getElementById('stat-partidos').innerText = partidosContador;
 
-            // Limpiar formulario
             document.getElementById('equipoReserva').value = '';
             document.getElementById('fechaReserva').value = '';
             document.getElementById('horaReserva').value = '';
@@ -673,7 +707,6 @@
 
         function comprobarPista() {
             const pistaSeleccionada = document.getElementById('selectorPistas').value;
-
             if (pistaSeleccionada === 'libre') {
                 alert('🟢 SENSOR OK: Pista libre en el sistema. Sin solapamientos detectados.');
             } else if (pistaSeleccionada === 'reservada') {
